@@ -1,0 +1,12 @@
+<launch>
+
+  <node pkg="joy" exec="joy_node" name="joy_node">
+  </node>
+
+  <node pkg="r1_servo" exec="servo_node" name="servo_node">
+    <param from="$(find-pkg-share r1_servo)/config/servo.yaml"/>
+  </node>
+  
+  <include file="$(find-pkg-share robomas_second_plugins)/launch/robomas_second_bridge_launch.xml"/>
+
+</launch>
