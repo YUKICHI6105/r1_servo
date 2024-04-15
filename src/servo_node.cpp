@@ -15,6 +15,8 @@ private:
   std::shared_ptr<rclcpp::ParameterCallbackHandle> mode_callback_handle_;
   std::shared_ptr<rclcpp::ParameterCallbackHandle> vel_callback_handle_;
   std::shared_ptr<rclcpp::ParameterCallbackHandle> dis_callback_handle_;
+  std::shared_ptr<rclcpp::ParameterCallbackHandle> ccr1_callback_handle_;
+  std::shared_ptr<rclcpp::ParameterCallbackHandle> ccr2_callback_handle_;
   void publishServo(uint32_t id, uint16_t data[]);
   void joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg);
   ServoArray servoArray;
@@ -23,9 +25,9 @@ public:
   ServoNode() : Node("servo_node")
   {
     sub_ = this->create_subscription<sensor_msgs::msg::Joy>("joy", 10, std::bind(&ServoNode::joy_callback, this, std::placeholders::_1));
-    pub_ = this->create_publisher<robomas_plugins::msg::Frame>("can_tx", 10);
-    this->declare_parameter("velButton", 2);
-    this->declare_parameter("disButton", 1);
+    pub_ = this->create_publisher<robomas_plugins::msg::Frame>("robomas_can_tx2", 10);
+    this->declare_parameter("velButton", 7);
+    this->declare_parameter("disButton", 6);
 
     this->declare_parameter("ServoButton", rclcpp::PARAMETER_INTEGER_ARRAY); // サーボのボタンのパラメーター
     std::vector<rclcpp::Parameter> servo_button_parameters{rclcpp::Parameter("ServoButton", servoArray.button)};
@@ -34,6 +36,14 @@ public:
     this->declare_parameter("ServoMode", rclcpp::PARAMETER_STRING_ARRAY); // サーボのトグルモードの選択
     std::vector<rclcpp::Parameter> servo_mode_parameters{rclcpp::Parameter("ServoMode", servoArray.mode)};
     this->set_parameters(servo_mode_parameters);
+
+    this->declare_parameter("ServoTargetOne", rclcpp::PARAMETER_INTEGER_ARRAY); // サーボのトグルモードの選択
+    std::vector<rclcpp::Parameter> servo_target_parameters1{rclcpp::Parameter("ServoTargetOne", servoArray.ccr1)};
+    this->set_parameters(servo_target_parameters1);
+
+    this->declare_parameter("ServoTargetTwo", rclcpp::PARAMETER_INTEGER_ARRAY); // サーボのトグルモードの選択
+    std::vector<rclcpp::Parameter> servo_target_parameters2{rclcpp::Parameter("ServoTargetTwo", servoArray.ccr2)};
+    this->set_parameters(servo_target_parameters2);
     
     param_subscriber_ = std::make_shared<rclcpp::ParameterEventHandler>(this);
     auto param_callback = [this](const rclcpp::Parameter & p) {
@@ -45,12 +55,22 @@ public:
       {
         servoArray.mode = p.as_string_array();
       }
+      if (p.get_name() == "ServoTargetOne")
+      {
+        servoArray.ccr1 = p.as_integer_array();
+      }
+      if (p.get_name() == "ServoTargetTwo")
+      {
+        servoArray.ccr2 = p.as_integer_array();
+      }
     };
     button_callback_handle_ = param_subscriber_->add_parameter_callback("ServoButton", param_callback);
     // RCLCPP_ERROR(get_logger(),"servo_node servo_node");
     mode_callback_handle_ = param_subscriber_->add_parameter_callback("ServoMode", param_callback);
     vel_callback_handle_ = param_subscriber_->add_parameter_callback("velButton", param_callback);
     dis_callback_handle_ = param_subscriber_->add_parameter_callback("disButton", param_callback);
+    ccr1_callback_handle_ = param_subscriber_->add_parameter_callback("ServoTargetOne", param_callback);
+    ccr2_callback_handle_ = param_subscriber_->add_parameter_callback("ServoTargetTwo", param_callback);
     
   }
   void toggle(uint32_t channel, const sensor_msgs::msg::Joy::SharedPtr msg);
@@ -83,13 +103,13 @@ void ServoNode::toggle(uint32_t channel, const sensor_msgs::msg::Joy::SharedPtr 
   {
     if (servoArray.preButton[channel] == 0)
     {
-      if (servoArray.value[channel] == 12000+48000*135/270)
+      if (servoArray.value[channel] == servoArray.ccr1[channel])
       {
-        servoArray.value[channel] = 12000+48000*45/270;
+        servoArray.value[channel] = servoArray.ccr2.at(channel);
       }
       else
       {
-        servoArray.value[channel] = 12000+48000*135/270;
+        servoArray.value[channel] = servoArray.ccr1.at(channel);
       }
       setValue(channel);
       servoArray.preButton[channel] = 1;
@@ -120,7 +140,7 @@ void ServoNode::joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg)
   }
   this->publishServo(0x301,servoArray.upperValue);
   this->publishServo(0x302,servoArray.lowerValue);
-  RCLCPP_INFO(this->get_logger(), "I heard: %i", *servoArray.value);
+  RCLCPP_INFO(this->get_logger(), "I heard: %i", servoArray.value[1]);
 }
 
 int main(int argc, char *argv[])

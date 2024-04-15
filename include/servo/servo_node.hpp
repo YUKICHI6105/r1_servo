@@ -12,4 +12,6 @@ struct ServoArray{
   std::vector<int64_t> button = std::vector<int64_t>(8);
   uint8_t countvalve1[8] = {};//カウントバルブの状態
   uint8_t preButton[8] = {};//ボタンの前の状態
+  std::vector<int64_t> ccr1 = std::vector<int64_t>(8);//CCR1の値
+  std::vector<int64_t> ccr2 = std::vector<int64_t>(8);//CCR2の値
 };
