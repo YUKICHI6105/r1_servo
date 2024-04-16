@@ -2,7 +2,15 @@ servo_node:
   ros__parameters:
     velButton: 7
     disButton: 6
-    ServoButton: [2,2,2,2,0,0,0,0] #[1番,2番,3番,4番,5番,6番,7番,8番] 0 or 1
+    ServoButton: 
+      - 2
+      - 2
+      - 2
+      - 2
+      - 0
+      - 0
+      - 0
+      - 0
     ServoMode: ["Toggle","Toggle","Toggle","Toggle","Toggle","Toggle","Toggle","Toggle"]
     ServoTargetOne: [20000,20000,50000,20000,20000,20000,20000,20000]
     ServoTargetTwo: [50000,50000,20000,50000,0,0,0,0]
